@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Jimny Commander v2.3</title>
+    <title>Jimny Commander v3.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Condensed:ital,wght@1,700&display=swap');
@@ -15,20 +15,20 @@
             color: #fff;
             font-family: 'Orbitron', sans-serif;
             margin: 0;
-            padding: 10px;
-            height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            padding: 12px;
             box-sizing: border-box;
         }
 
         .fonte-fueltech { font-family: 'Roboto Condensed', sans-serif; font-style: italic; text-transform: uppercase; }
 
+        /* Barra de RPM Responsiva */
         .container-barra-rpm {
-            height: 45px;
+            height: clamp(30px, 8vh, 50px);
             background: #111;
-            clip-path: polygon(0% 0%, 100% 0%, 97% 100%, 0% 100%);
+            clip-path: polygon(0% 0%, 100% 0%, 98% 100%, 0% 100%);
             position: relative;
             border-bottom: 2px solid #333;
         }
@@ -43,93 +43,101 @@
         @keyframes flash { 0%, 100% { opacity: 1; } 50% { opacity: 0.2; } }
 
         .painel-vidro {
-            background: rgba(255,255,255,0.05);
+            background: rgba(255,255,255,0.04);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
         }
 
-        .botao-tração { border: 1px solid #444; color: #666; padding: 2px 8px; border-radius: 5px; font-size: 10px; font-weight: 900; }
-        .tração-ativa { border-color: #22c55e; color: #22c55e; background: rgba(34, 197, 94, 0.2); }
-
-        .numero-gigante { font-size: 100px; line-height: 0.8; }
+        /* Ajuste para modo Vertical (Retrato) */
+        @media (orientation: portrait) {
+            .grid-principal { grid-template-columns: 1fr !important; }
+            .numero-gigante { font-size: 120px !important; }
+            .sensores-grid { grid-template-columns: 1fr 1fr !important; }
+        }
     </style>
 </head>
 <body>
 
     <!-- Header -->
-    <div class="flex justify-between items-center mb-2">
+    <div class="flex justify-between items-center mb-4">
         <div class="flex items-center gap-2">
-            <div id="led-status" class="w-2 h-2 rounded-full bg-red-900"></div>
-            <span id="txt-status" class="text-[9px] text-gray-500 font-bold uppercase">OBDII DISCONNECTED</span>
+            <div id="led-status" class="w-3 h-3 rounded-full bg-red-900 shadow-inner"></div>
+            <div class="flex flex-col">
+                <span class="text-[8px] text-gray-500 font-bold uppercase leading-none">Status</span>
+                <span id="txt-status" class="text-[10px] text-gray-300 font-bold uppercase leading-none">Desconectado</span>
+            </div>
         </div>
-        <h1 class="fonte-fueltech text-lg italic text-gray-400">JIMNY <span class="text-red-600 font-black">COMMANDER</span></h1>
+        <div class="text-right">
+            <h1 class="fonte-fueltech text-xl italic text-gray-400 leading-none">JIMNY <span class="text-red-600 font-black">COMMANDER</span></h1>
+        </div>
     </div>
 
     <!-- RPM Section -->
     <div class="mb-4">
         <div class="flex justify-between items-end mb-1 px-1">
             <div class="flex items-baseline gap-1">
-                <span id="valor-rpm" class="text-5xl font-black italic tracking-tighter">0</span>
-                <span class="text-xs text-gray-600 font-bold">RPM</span>
+                <span id="valor-rpm" class="text-5xl font-black italic tracking-tighter leading-none">0</span>
+                <span class="text-xs text-gray-600 font-bold uppercase">RPM</span>
             </div>
-            <div class="flex gap-2 mb-1">
-                <div id="tag-2h" class="botao-tração tração-ativa">2H</div>
-                <div id="tag-4h" class="botao-tração">4H</div>
-                <div id="tag-4l" class="botao-tração">4L</div>
+            <div class="flex gap-2">
+                <div id="tag-2h" class="border border-green-500/50 text-green-500 bg-green-500/10 px-2 py-0.5 rounded text-[10px] font-black">2H</div>
+                <div id="tag-4l" class="border border-zinc-700 text-zinc-700 px-2 py-0.5 rounded text-[10px] font-black uppercase">4L</div>
             </div>
         </div>
-        <div class="container-barra-rpm">
+        <div class="container-barra-rpm rounded">
             <div id="barra-rpm" class="preenchimento-rpm"></div>
         </div>
     </div>
 
-    <!-- Main Grid -->
-    <div class="grid grid-cols-12 gap-3 flex-grow mb-4 overflow-hidden">
-        <div class="col-span-7 painel-vidro flex flex-col items-center justify-center relative">
-            <span class="absolute top-3 text-[9px] text-gray-600 font-bold uppercase tracking-widest">Marcha</span>
-            <div id="valor-marcha" class="numero-gigante font-black italic text-white">N</div>
-            <div class="flex items-baseline gap-2 mt-2">
-                <span id="valor-vel" class="text-3xl font-bold italic">0</span>
-                <span class="text-xs text-gray-500 font-bold italic">KM/H</span>
+    <!-- Layout Adaptável -->
+    <div class="grid grid-principal grid-cols-12 gap-3 flex-grow mb-4">
+        
+        <!-- Marcha e Velocidade -->
+        <div class="col-span-12 lg:col-span-7 painel-vidro flex flex-col items-center justify-center relative py-6">
+            <span class="absolute top-3 text-[10px] text-gray-600 font-bold uppercase tracking-widest">Marcha Atual</span>
+            <div id="valor-marcha" class="text-[140px] font-black italic text-white leading-none numero-gigante">N</div>
+            <div class="flex items-baseline gap-2 mt-4">
+                <span id="valor-vel" class="text-4xl font-bold italic leading-none">0</span>
+                <span class="text-sm text-gray-500 font-bold italic uppercase">km/h</span>
             </div>
         </div>
 
-        <div class="col-span-5 flex flex-col gap-3">
-            <div class="painel-vidro p-3 flex flex-col justify-center flex-grow border-l-4 border-cyan-500">
-                <span class="text-[9px] text-gray-500 font-bold uppercase">Água</span>
-                <div class="flex items-baseline gap-1">
+        <!-- Sensores -->
+        <div class="col-span-12 lg:col-span-5 grid sensores-grid gap-3">
+            <div class="painel-vidro p-4 flex flex-col justify-center border-l-4 border-cyan-500">
+                <span class="text-[10px] text-gray-500 font-bold uppercase mb-1">Água</span>
+                <div class="flex items-baseline gap-1 leading-none">
                     <span id="valor-temp" class="text-3xl font-black text-cyan-400">--</span>
-                    <span class="text-[10px] text-cyan-900 font-bold">°C</span>
+                    <span class="text-xs text-cyan-900 font-bold">°C</span>
                 </div>
             </div>
-            <div class="painel-vidro p-3 flex flex-col justify-center flex-grow border-l-4 border-yellow-500">
-                <span class="text-[9px] text-gray-500 font-bold uppercase">Bat</span>
-                <div class="flex items-baseline gap-1">
+            <div class="painel-vidro p-4 flex flex-col justify-center border-l-4 border-yellow-500">
+                <span class="text-[10px] text-gray-500 font-bold uppercase mb-1">Bateria</span>
+                <div class="flex items-baseline gap-1 leading-none">
                     <span id="valor-volt" class="text-3xl font-black text-yellow-400">12.8</span>
-                    <span class="text-[10px] text-yellow-900 font-bold">V</span>
+                    <span class="text-xs text-yellow-900 font-bold">V</span>
                 </div>
             </div>
-            <div class="painel-vidro p-2 flex flex-col justify-center border-l-4 border-red-600">
-                <span id="txt-modo" class="text-[10px] font-black italic uppercase text-center">Asfalto</span>
+            <div class="painel-vidro p-4 flex items-center justify-center border-l-4 border-red-600 lg:col-span-1 col-span-2">
+                <span id="txt-modo" class="text-xs font-black italic uppercase text-white tracking-widest">Tração: Asfalto</span>
             </div>
         </div>
     </div>
 
-    <!-- Bottom Controls -->
-    <div class="grid grid-cols-3 gap-3 h-16">
-        <button id="btn-conectar" class="bg-zinc-900 border border-zinc-700 text-white font-black rounded-xl text-xs uppercase active:bg-blue-900">
+    <!-- Controles Inferiores (Sempre visíveis) -->
+    <div class="grid grid-cols-3 gap-3 h-16 pb-2">
+        <button id="btn-conectar" class="bg-zinc-900 border-b-4 border-zinc-950 text-white font-black rounded-xl text-[10px] uppercase active:translate-y-1 active:border-b-0 transition-all">
             Conectar
         </button>
-        <button id="btn-reduzida" class="bg-zinc-900 border border-red-900 text-red-500 font-black rounded-xl text-[10px] uppercase leading-tight">
+        <button id="btn-reduzida" class="bg-zinc-900 border-b-4 border-red-900/30 text-red-500 font-black rounded-xl text-[10px] uppercase leading-tight active:translate-y-1 active:border-b-0 transition-all">
             Reduzida
         </button>
-        <button id="btn-teste" class="bg-zinc-900 border border-zinc-700 text-gray-500 font-black rounded-xl text-xs uppercase">
+        <button id="btn-teste" class="bg-zinc-900 border-b-4 border-zinc-950 text-gray-500 font-black rounded-xl text-[10px] uppercase active:translate-y-1 active:border-b-0 transition-all">
             Testar
         </button>
     </div>
 
     <script>
-        // Lógica de funcionamento
         let simulando = false;
         let emReduzida = false;
         let loopSimulacao;
@@ -144,9 +152,13 @@
         const elLed = document.getElementById('led-status');
 
         function estimarMarcha(rpm, vel) {
-            if (vel < 3 || rpm < 600) return "N";
+            if (vel < 4 || rpm < 600) return "N";
             let r = (rpm / vel) / (emReduzida ? 2.6 : 1.0);
-            if (r > 135) return "1"; if (r > 88) return "2"; if (r > 60) return "3"; if (r > 44) return "4"; return "5";
+            if (r > 130) return "1"; 
+            if (r > 85) return "2"; 
+            if (r > 58) return "3"; 
+            if (r > 42) return "4"; 
+            return "5";
         }
 
         function atualizarPainel(rpm, vel, temp) {
@@ -154,48 +166,65 @@
             elVel.innerText = Math.floor(vel);
             elTemp.innerText = temp;
             elBarraRpm.style.width = Math.min((rpm / 7500) * 100, 100) + "%";
-            if (rpm > 6000) elBarraRpm.classList.add('shift-light'); else elBarraRpm.classList.remove('shift-light');
+            if (rpm > 6200) elBarraRpm.classList.add('shift-light'); 
+            else elBarraRpm.classList.remove('shift-light');
             elMarcha.innerText = estimarMarcha(rpm, vel);
         }
 
         document.getElementById('btn-reduzida').addEventListener('click', () => {
             emReduzida = !emReduzida;
-            document.getElementById('tag-2h').classList.toggle('tração-ativa', !emReduzida);
-            document.getElementById('tag-4l').classList.toggle('tração-ativa', emReduzida);
-            elModo.innerText = emReduzida ? "TRILHA 4L" : "ASFALTO";
-            elModo.style.color = emReduzida ? "#ef4444" : "#fff";
+            const t2h = document.getElementById('tag-2h');
+            const t4l = document.getElementById('tag-4l');
+            
+            if (emReduzida) {
+                t2h.className = "border border-zinc-700 text-zinc-700 px-2 py-0.5 rounded text-[10px] font-black uppercase";
+                t4l.className = "border border-red-500 bg-red-500/20 text-red-500 px-2 py-0.5 rounded text-[10px] font-black uppercase";
+                elModo.innerText = "Tração: Reduzida";
+                elModo.style.color = "#ef4444";
+            } else {
+                t4l.className = "border border-zinc-700 text-zinc-700 px-2 py-0.5 rounded text-[10px] font-black uppercase";
+                t2h.className = "border border-green-500/50 text-green-500 bg-green-500/10 px-2 py-0.5 rounded text-[10px] font-black";
+                elModo.innerText = "Tração: Asfalto";
+                elModo.style.color = "#fff";
+            }
         });
 
         document.getElementById('btn-teste').addEventListener('click', () => {
             if (simulando) {
                 clearInterval(loopSimulacao);
                 simulando = false;
-                elStatus.innerText = "OBDII DISCONNECTED";
+                elStatus.innerText = "Desconectado";
                 elLed.style.backgroundColor = "#7f1d1d";
+                elLed.style.boxShadow = "none";
             } else {
                 simulando = true;
-                elStatus.innerText = "MODO TESTE ATIVO";
+                elStatus.innerText = "Simulando...";
                 elLed.style.backgroundColor = "#22c55e";
+                elLed.style.boxShadow = "0 0 10px #22c55e";
                 let t = 0;
                 loopSimulacao = setInterval(() => {
                     t += 0.05;
-                    const mockRpm = 800 + (Math.abs(Math.sin(t)) * 5500);
-                    const mockVel = (t * 18) % 140;
-                    atualizarPainel(mockRpm, mockVel, 92);
+                    atualizarPainel(800 + (Math.abs(Math.sin(t)) * 5500), (t * 22) % 130, 91);
                 }, 50);
             }
         });
 
         document.getElementById('btn-conectar').addEventListener('click', async () => {
             try {
+                elStatus.innerText = "Buscando...";
+                // Busca genérica para aceitar mais adaptadores ELM327
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ namePrefix: 'OBD' }, { namePrefix: 'ELM' }],
-                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb'] 
+                    acceptAllDevices: true,
+                    optionalServices: ['00001101-0000-1000-8000-00805f9b34fb']
                 });
+                elStatus.innerText = "Emparelhando...";
                 await device.gatt.connect();
+                elStatus.innerText = "Conectado!";
                 elLed.style.backgroundColor = "#22c55e";
-                elStatus.innerText = "CONECTADO!";
-            } catch (err) { console.log(err); }
+            } catch (err) {
+                elStatus.innerText = "Erro!";
+                console.error(err);
+            }
         });
     </script>
 </body>
